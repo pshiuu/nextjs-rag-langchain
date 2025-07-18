@@ -55,15 +55,15 @@ export default function TestEmbed() {
             
             <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
               <p className="text-sm text-yellow-800">
-                <strong>⚠️ Important:</strong> If you see only default styles (primaryColor: '#0f172a'), 
+                <strong>⚠️ Important:</strong> If you see only default styles (primaryColor: &apos;#0f172a&apos;), 
                 you need to:
               </p>
               <ol className="text-sm text-yellow-700 mt-1 ml-4 list-decimal">
                 <li>Go to your Chatbots dashboard</li>
-                <li>Click "Edit" on your chatbot</li>
-                <li>Scroll to "Customize Appearance"</li>
+                <li>Click &quot;Edit&quot; on your chatbot</li>
+                <li>Scroll to &quot;Customize Appearance&quot;</li>
                 <li>Change some colors/settings</li>
-                <li>Click "Save Styles"</li>
+                <li>Click &quot;Save Styles&quot;</li>
                 <li>Then test the embed again</li>
               </ol>
             </div>
