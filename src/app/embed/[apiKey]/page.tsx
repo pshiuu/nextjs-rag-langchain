@@ -24,6 +24,9 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
       body: {
         apiKey,
       },
+      initialMessages: styles.showInitialMessage 
+        ? [{ id: 'initial', role: 'assistant', content: styles.initialMessage }]
+        : undefined,
     })
 
   const chatParent = useRef<HTMLUListElement>(null)
@@ -138,26 +141,70 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
           padding: 0,
         }}
       >
-      {/* Close Button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={handleClose}
-        className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full border"
-        style={{
-          backgroundColor: `${styles.backgroundColor}cc`, // cc = 80% opacity
-          borderColor: styles.borderColor,
-          color: styles.textColor,
-        }}
-        aria-label="Close chat"
-      >
-        <X className="h-4 w-4" />
-      </Button>
+      {/* Header */}
+      {styles.showHeader && (
+        <div 
+          className="flex items-center justify-between px-4 py-3 border-b"
+          style={{
+            borderBottomColor: styles.borderColor,
+            backgroundColor: styles.backgroundColor,
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <h3 className="font-medium text-sm" style={{ color: styles.textColor }}>
+              {styles.headerTitle}
+            </h3>
+            {styles.showOnlineStatus && (
+              <div className="flex items-center gap-1">
+                <div 
+                  className="w-2 h-2 rounded-full animate-pulse"
+                  style={{ backgroundColor: '#10b981' }} // green-500
+                />
+                <span className="text-xs" style={{ color: `${styles.textColor}80` }}>
+                  Online
+                </span>
+              </div>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleClose}
+            className="h-6 w-6 rounded-full border"
+            style={{
+              backgroundColor: `${styles.backgroundColor}cc`,
+              borderColor: styles.borderColor,
+              color: styles.textColor,
+            }}
+            aria-label="Close chat"
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
+
+      {/* Close Button (when no header) */}
+      {!styles.showHeader && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleClose}
+          className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full border"
+          style={{
+            backgroundColor: `${styles.backgroundColor}cc`, // cc = 80% opacity
+            borderColor: styles.borderColor,
+            color: styles.textColor,
+          }}
+          aria-label="Close chat"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
 
       <section 
         className="flex flex-col flex-grow w-full"
         style={{ 
-          paddingTop: '48px', // Space for close button
+          paddingTop: styles.showHeader ? '0px' : '48px', // Space for close button when no header
           paddingLeft: styles.padding,
           paddingRight: styles.padding,
         }}
@@ -201,7 +248,7 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
           ) : (
             <div className="flex justify-center items-center h-full">
               <p style={{ color: `${styles.textColor}80` }}>
-                Ask a question to get started.
+                {styles.showInitialMessage ? styles.initialMessage : 'Ask a question to get started.'}
               </p>
             </div>
           )}
@@ -222,7 +269,7 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
         >
           <input
             className="flex-1 min-h-[40px] px-3 py-2 border rounded-md outline-none focus:ring-2 focus:ring-opacity-50"
-            placeholder="Type your question..."
+            placeholder={styles.placeholderText}
             type="text"
             value={input}
             onChange={handleInputChange}
@@ -256,7 +303,7 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
               e.currentTarget.style.backgroundColor = styles.buttonBackgroundColor
             }}
           >
-            {isLoading ? '...' : 'Send'}
+            {isLoading ? '...' : styles.sendButtonText}
           </button>
         </form>
       </section>

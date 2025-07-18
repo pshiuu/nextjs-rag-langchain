@@ -27,10 +27,39 @@ export interface ChatbotStyle {
   inputBorderColor: string;
   inputTextColor: string;
 
-  // Button styling
+  // Button styling (Send button)
   buttonBackgroundColor: string;
   buttonTextColor: string;
   buttonHoverColor: string;
+
+  // Toggle button styling (Chat bubble)
+  toggleButtonBackgroundColor: string;
+  toggleButtonTextColor: string;
+  toggleButtonHoverColor: string;
+  toggleButtonSize: string;
+  toggleButtonBorderRadius: string;
+
+  // Toggle button close state styling (When chat is open)
+  toggleButtonCloseBackgroundColor: string;
+  toggleButtonCloseTextColor: string;
+  toggleButtonCloseHoverColor: string;
+
+  // Text Customization
+  sendButtonText: string;
+  placeholderText: string;
+
+  // Initial Message Settings
+  showInitialMessage: boolean;
+  initialMessage: string;
+
+  // Header Settings
+  showHeader: boolean;
+  headerTitle: string;
+  showOnlineStatus: boolean;
+
+  // Auto-open Behavior
+  autoOpen: "never" | "immediately" | "delayed";
+  autoOpenDelay: number; // in seconds for delayed auto-open
 }
 
 export interface ChatbotWithStyle {
@@ -77,4 +106,33 @@ export const defaultChatbotStyle: ChatbotStyle = {
   buttonBackgroundColor: "#0f172a",
   buttonTextColor: "#ffffff",
   buttonHoverColor: "#334155", // slate-700
+
+  // Toggle button styling
+  toggleButtonBackgroundColor: "#0f172a", // slate-900
+  toggleButtonTextColor: "#ffffff",
+  toggleButtonHoverColor: "#334155", // slate-700
+  toggleButtonSize: "60px",
+  toggleButtonBorderRadius: "50%", // circular by default
+
+  // Toggle button close state styling
+  toggleButtonCloseBackgroundColor: "#0f172a", // slate-900
+  toggleButtonCloseTextColor: "#ffffff",
+  toggleButtonCloseHoverColor: "#334155", // slate-700
+
+  // Text Customization
+  sendButtonText: "Send",
+  placeholderText: "Type your message...",
+
+  // Initial Message Settings
+  showInitialMessage: true,
+  initialMessage: "Hello! How can I help you today?",
+
+  // Header Settings
+  showHeader: true,
+  headerTitle: "Chatbot",
+  showOnlineStatus: true,
+
+  // Auto-open Behavior
+  autoOpen: "never",
+  autoOpenDelay: 0, // in seconds for delayed auto-open
 };

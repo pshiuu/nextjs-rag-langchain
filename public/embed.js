@@ -30,7 +30,24 @@
       inputTextColor: '#0f172a',
       buttonBackgroundColor: '#0f172a',
       buttonTextColor: '#ffffff',
-      buttonHoverColor: '#334155'
+      buttonHoverColor: '#334155',
+      toggleButtonBackgroundColor: '#0f172a',
+      toggleButtonTextColor: '#ffffff',
+      toggleButtonHoverColor: '#334155',
+      toggleButtonSize: '60px',
+      toggleButtonBorderRadius: '50%',
+      toggleButtonCloseBackgroundColor: '#0f172a',
+      toggleButtonCloseTextColor: '#ffffff',
+      toggleButtonCloseHoverColor: '#334155',
+      sendButtonText: 'Send',
+      placeholderText: 'Type your message...',
+      showInitialMessage: true,
+      initialMessage: 'Hello! How can I help you today?',
+      showHeader: true,
+      headerTitle: 'Chatbot',
+      showOnlineStatus: true,
+      autoOpen: 'never',
+      autoOpenDelay: 0
     };
     
     let currentStyles = defaultStyles;
@@ -45,7 +62,10 @@
     iframe.style.display = 'none'; // Initially hidden
     iframe.style.zIndex = '9999';
     iframe.style.border = 'none';
-    iframe.style.transition = 'all 0.3s ease-in-out';
+    iframe.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+    iframe.style.transform = 'translateY(100%) scale(0.95)';
+    iframe.style.opacity = '0';
+    iframe.style.transformOrigin = 'bottom right';
     
     // Create a chat bubble button
     const toggleButton = document.createElement('button');
@@ -57,9 +77,6 @@
     toggleButton.style.position = 'fixed';
     toggleButton.style.bottom = '20px';
     toggleButton.style.right = '20px';
-    toggleButton.style.width = '60px';
-    toggleButton.style.height = '60px';
-    toggleButton.style.borderRadius = '50%';
     toggleButton.style.border = 'none';
     toggleButton.style.cursor = 'pointer';
     toggleButton.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
@@ -94,21 +111,30 @@
       console.log('Embed.js: Applied iframe dimensions:', iframe.style.width, 'x', iframe.style.height);
       console.log('Embed.js: Applied iframe position:', 'bottom:', iframe.style.bottom, 'right:', iframe.style.right);
       
-      // Apply button styles
-      toggleButton.style.backgroundColor = currentStyles.buttonBackgroundColor || '#0f172a';
-      toggleButton.style.color = currentStyles.buttonTextColor || '#ffffff';
+      // Apply toggle button styles
+      toggleButton.style.backgroundColor = currentStyles.toggleButtonBackgroundColor || '#0f172a';
+      toggleButton.style.color = currentStyles.toggleButtonTextColor || '#ffffff';
+      toggleButton.style.width = currentStyles.toggleButtonSize || '60px';
+      toggleButton.style.height = currentStyles.toggleButtonSize || '60px';
+      toggleButton.style.borderRadius = currentStyles.toggleButtonBorderRadius || '50%';
       
-      // Update button hover effects
+      // Update toggle button hover effects
       toggleButton.onmouseenter = () => {
         if (!isOpen) {
-          toggleButton.style.backgroundColor = currentStyles.buttonHoverColor || '#334155';
+          toggleButton.style.backgroundColor = currentStyles.toggleButtonHoverColor || '#334155';
+          toggleButton.style.transform = 'scale(1.05)';
+        } else {
+          toggleButton.style.backgroundColor = currentStyles.toggleButtonCloseHoverColor || '#334155';
           toggleButton.style.transform = 'scale(1.05)';
         }
       };
       
       toggleButton.onmouseleave = () => {
         if (!isOpen) {
-          toggleButton.style.backgroundColor = currentStyles.buttonBackgroundColor || '#0f172a';
+          toggleButton.style.backgroundColor = currentStyles.toggleButtonBackgroundColor || '#0f172a';
+          toggleButton.style.transform = 'scale(1)';
+        } else {
+          toggleButton.style.backgroundColor = currentStyles.toggleButtonCloseBackgroundColor || '#0f172a';
           toggleButton.style.transform = 'scale(1)';
         }
       };
@@ -117,36 +143,62 @@
     // Function to toggle chat
     function toggleChat() {
       if (!isOpen) {
-        console.log('Embed.js: Opening chat, iframe dimensions:', iframe.style.width, 'x', iframe.style.height);
-        iframe.style.display = 'block';
-        iframe.style.position = 'fixed';
-        iframe.style.bottom = '90px'; // Leave space for the button
-        iframe.style.right = '20px';
-        iframe.style.zIndex = '9999';
-        
-        toggleButton.innerHTML = `
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        `;
-        toggleButton.style.backgroundColor = currentStyles.borderColor || '#e2e8f0';
-        toggleButton.style.color = currentStyles.primaryColor || '#0f172a';
-        isOpen = true;
+        openChat();
       } else {
         closeChat();
       }
     }
     
-    // Function to close chat
+    // Function to open chat with animation
+    function openChat() {
+      console.log('Embed.js: Opening chat, iframe dimensions:', iframe.style.width, 'x', iframe.style.height);
+      
+      // Set initial state and show iframe
+      iframe.style.display = 'block';
+      iframe.style.position = 'fixed';
+      iframe.style.bottom = '90px'; // Leave space for the button
+      iframe.style.right = '20px';
+      iframe.style.zIndex = '9999';
+      
+      // Force a reflow to ensure the display change takes effect
+      iframe.offsetHeight;
+      
+      // Animate in
+      requestAnimationFrame(() => {
+        iframe.style.transform = 'translateY(0) scale(1)';
+        iframe.style.opacity = '1';
+      });
+      
+      // Update button appearance
+      toggleButton.innerHTML = `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      `;
+      toggleButton.style.backgroundColor = currentStyles.toggleButtonCloseBackgroundColor || '#0f172a';
+      toggleButton.style.color = currentStyles.toggleButtonCloseTextColor || '#ffffff';
+      isOpen = true;
+    }
+    
+    // Function to close chat with animation
     function closeChat() {
-      iframe.style.display = 'none';
+      // Animate out
+      iframe.style.transform = 'translateY(100%) scale(0.95)';
+      iframe.style.opacity = '0';
+      
+      // Hide after animation completes
+      setTimeout(() => {
+        iframe.style.display = 'none';
+      }, 400); // Match the transition duration
+      
+      // Update button appearance
       toggleButton.innerHTML = `
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M8 12H16M8 8H16M8 16H13M7 4V2C7 1.44772 7.44772 1 8 1H16C16.5523 1 17 1.44772 17 2V4H19C20.1046 4 21 4.89543 21 6V18C21 19.1046 20.1046 20 19 20H7L3 24V6C3 4.89543 3.89543 4 5 4H7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       `;
-      toggleButton.style.backgroundColor = currentStyles.buttonBackgroundColor || '#0f172a';
-      toggleButton.style.color = currentStyles.buttonTextColor || '#ffffff';
+      toggleButton.style.backgroundColor = currentStyles.toggleButtonBackgroundColor || '#0f172a';
+      toggleButton.style.color = currentStyles.toggleButtonTextColor || '#ffffff';
       isOpen = false;
     }
     
@@ -190,18 +242,42 @@
       if (data && data.styles && typeof data.styles === 'object') {
         console.log('Embed.js: Applying custom styles:', data.styles);
         applyStyles(data.styles);
+        handleAutoOpen(); // Handle auto-open with custom styles
       } else if (data && data.error) {
         console.error('Embed.js: Styles API returned error:', data.error);
         console.log('Embed.js: Using default styles due to API error');
+        handleAutoOpen(); // Handle auto-open with default styles
       } else {
         console.log('Embed.js: No custom styles found (data.styles is null/undefined), keeping defaults');
         console.log('Embed.js: Full response data:', data);
+        handleAutoOpen(); // Handle auto-open with default styles
       }
     })
     .catch(error => {
       console.error('Embed.js: Could not fetch custom styles:', error);
       console.log('Embed.js: Using default styles due to fetch error');
+      handleAutoOpen(); // Handle auto-open with default styles when fetch fails
     });
+    
+    // Auto-open functionality
+    function handleAutoOpen() {
+      if (currentStyles.autoOpen === 'immediately') {
+        setTimeout(() => {
+          if (!isOpen) {
+            openChat();
+          }
+        }, 500); // Small delay to ensure everything is loaded
+      } else if (currentStyles.autoOpen === 'delayed') {
+        setTimeout(() => {
+          if (!isOpen) {
+            openChat();
+          }
+        }, (currentStyles.autoOpenDelay || 5) * 1000); // Convert seconds to milliseconds
+      }
+    }
+    
+    // Apply initial default styles first
+    applyStyles(defaultStyles);
     
     // Append to the body
     document.body.appendChild(iframe);

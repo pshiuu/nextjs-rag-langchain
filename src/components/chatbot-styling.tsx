@@ -29,6 +29,11 @@ export function ChatbotStyling({
     onStylesChange(newStyles)
   }, [styles, onStylesChange])
 
+  const updateStyleTyped = useCallback((key: keyof ChatbotStyle, value: any) => {
+    const newStyles = { ...styles, [key]: value }
+    onStylesChange(newStyles)
+  }, [styles, onStylesChange])
+
   const resetToDefaults = useCallback(() => {
     onStylesChange(defaultChatbotStyle)
   }, [onStylesChange])
@@ -350,9 +355,9 @@ export function ChatbotStyling({
         </div>
       </div>
 
-      {/* Input & Button Styling */}
+      {/* Input & Send Button Styling */}
       <div className="space-y-4">
-        <h4 className="font-medium text-base border-b pb-2">Input & Button Colors</h4>
+        <h4 className="font-medium text-base border-b pb-2">Input & Send Button Colors</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <ColorInput
             label="Input Background"
@@ -370,20 +375,203 @@ export function ChatbotStyling({
             onChange={(value) => updateStyle('inputTextColor', value)}
           />
           <ColorInput
-            label="Button Background"
+            label="Send Button Background"
             value={styles.buttonBackgroundColor}
             onChange={(value) => updateStyle('buttonBackgroundColor', value)}
           />
           <ColorInput
-            label="Button Text"
+            label="Send Button Text"
             value={styles.buttonTextColor}
             onChange={(value) => updateStyle('buttonTextColor', value)}
           />
           <ColorInput
-            label="Button Hover"
+            label="Send Button Hover"
             value={styles.buttonHoverColor}
             onChange={(value) => updateStyle('buttonHoverColor', value)}
           />
+        </div>
+      </div>
+
+      {/* Toggle Button (Chat Bubble) Styling */}
+      <div className="space-y-4">
+        <h4 className="font-medium text-base border-b pb-2">Toggle Button (Chat Bubble)</h4>
+        
+        {/* Open State (Chat Button) */}
+        <div className="space-y-3">
+          <h5 className="text-sm font-medium text-gray-700">Open State (Chat Button)</h5>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ColorInput
+              label="Background Color"
+              value={styles.toggleButtonBackgroundColor}
+              onChange={(value) => updateStyle('toggleButtonBackgroundColor', value)}
+            />
+            <ColorInput
+              label="Icon Color"
+              value={styles.toggleButtonTextColor}
+              onChange={(value) => updateStyle('toggleButtonTextColor', value)}
+            />
+            <ColorInput
+              label="Hover Color"
+              value={styles.toggleButtonHoverColor}
+              onChange={(value) => updateStyle('toggleButtonHoverColor', value)}
+            />
+          </div>
+        </div>
+
+        {/* Close State (X Button) */}
+        <div className="space-y-3">
+          <h5 className="text-sm font-medium text-gray-700">Close State (X Button)</h5>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ColorInput
+              label="Background Color"
+              value={styles.toggleButtonCloseBackgroundColor}
+              onChange={(value) => updateStyle('toggleButtonCloseBackgroundColor', value)}
+            />
+            <ColorInput
+              label="Icon Color"
+              value={styles.toggleButtonCloseTextColor}
+              onChange={(value) => updateStyle('toggleButtonCloseTextColor', value)}
+            />
+            <ColorInput
+              label="Hover Color"
+              value={styles.toggleButtonCloseHoverColor}
+              onChange={(value) => updateStyle('toggleButtonCloseHoverColor', value)}
+            />
+          </div>
+        </div>
+
+        {/* Size & Shape */}
+        <div className="space-y-3">
+          <h5 className="text-sm font-medium text-gray-700">Size & Shape</h5>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <UnitInput
+              label="Button Size"
+              value={styles.toggleButtonSize}
+              onChange={(value) => updateStyle('toggleButtonSize', value)}
+              placeholder="60"
+              units={['px', 'rem', 'em']}
+            />
+            <UnitInput
+              label="Border Radius"
+              value={styles.toggleButtonBorderRadius}
+              onChange={(value) => updateStyle('toggleButtonBorderRadius', value)}
+              placeholder="50"
+              units={['px', 'rem', 'em', '%']}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Text Customization */}
+      <div className="space-y-4">
+        <h4 className="font-medium text-base border-b pb-2">Text Customization</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <TextInput
+            label="Send Button Text"
+            value={styles.sendButtonText}
+            onChange={(value) => updateStyle('sendButtonText', value)}
+            placeholder="Send"
+          />
+          <TextInput
+            label="Input Placeholder Text"
+            value={styles.placeholderText}
+            onChange={(value) => updateStyle('placeholderText', value)}
+            placeholder="Type your message..."
+          />
+        </div>
+      </div>
+
+      {/* Initial Message Settings */}
+      <div className="space-y-4">
+        <h4 className="font-medium text-base border-b pb-2">Initial Message</h4>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="showInitialMessage"
+              checked={styles.showInitialMessage}
+              onChange={(e) => updateStyleTyped('showInitialMessage', e.target.checked)}
+              className="rounded border-gray-300"
+            />
+            <label htmlFor="showInitialMessage" className="text-sm font-medium">
+              Show initial bot message
+            </label>
+          </div>
+          {styles.showInitialMessage && (
+            <TextInput
+              label="Initial Message Text"
+              value={styles.initialMessage}
+              onChange={(value) => updateStyle('initialMessage', value)}
+              placeholder="Hello! How can I help you today?"
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Header Settings */}
+      <div className="space-y-4">
+        <h4 className="font-medium text-base border-b pb-2">Header Settings</h4>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="showHeader"
+              checked={styles.showHeader}
+              onChange={(e) => updateStyleTyped('showHeader', e.target.checked)}
+              className="rounded border-gray-300"
+            />
+            <label htmlFor="showHeader" className="text-sm font-medium">
+              Show chat header
+            </label>
+          </div>
+          {styles.showHeader && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <TextInput
+                label="Header Title"
+                value={styles.headerTitle}
+                onChange={(value) => updateStyle('headerTitle', value)}
+                placeholder="Chatbot"
+              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="showOnlineStatus"
+                  checked={styles.showOnlineStatus}
+                  onChange={(e) => updateStyleTyped('showOnlineStatus', e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                <label htmlFor="showOnlineStatus" className="text-sm font-medium">
+                  Show online status
+                </label>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Auto-open Behavior */}
+      <div className="space-y-4">
+        <h4 className="font-medium text-base border-b pb-2">Auto-open Behavior</h4>
+        <div className="space-y-3">
+          <SelectInput
+            label="Auto-open Setting"
+            value={styles.autoOpen}
+            onChange={(value) => updateStyle('autoOpen', value)}
+            options={[
+              { value: 'never', label: 'Never auto-open' },
+              { value: 'immediately', label: 'Open immediately' },
+              { value: 'delayed', label: 'Open after delay' },
+            ]}
+          />
+          {styles.autoOpen === 'delayed' && (
+            <UnitInput
+              label="Auto-open Delay"
+              value={styles.autoOpenDelay.toString()}
+              onChange={(value) => updateStyleTyped('autoOpenDelay', parseInt(value) || 0)}
+              placeholder="5"
+              units={['s']}
+            />
+          )}
         </div>
       </div>
       </div>

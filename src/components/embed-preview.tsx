@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChatbotStyle } from '@/types/chatbot'
 import { X } from 'lucide-react'
 
@@ -11,14 +11,44 @@ interface EmbedPreviewProps {
 
 export function EmbedPreview({ styles, chatbotName = 'Preview Bot' }: EmbedPreviewProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState([
-    { id: 1, role: 'bot', content: `Hi! I'm ${chatbotName}. How can I help you today?` },
-    { id: 2, role: 'user', content: 'This is a preview of how your chat will look!' },
-    { id: 3, role: 'bot', content: 'You can customize colors, fonts, spacing and more using the style editor on the left. Try changing some settings to see the preview update in real-time!' },
-  ])
+  const [isAnimating, setIsAnimating] = useState(false)
+  const [messages, setMessages] = useState([])
 
-  const toggleChat = () => {
-    setIsOpen(!isOpen)
+  // Update messages when initial message settings change
+  useEffect(() => {
+    const initialMessages = []
+    if (styles.showInitialMessage) {
+      initialMessages.push({ id: 'initial', role: 'bot', content: styles.initialMessage })
+    }
+    setMessages(initialMessages)
+  }, [styles.showInitialMessage, styles.initialMessage])
+  
+  // Handle auto-open simulation
+  useEffect(() => {
+    // Don't auto-open if it's already open
+    if (isOpen) return
+    
+    let openTimeout: NodeJS.Timeout
+    
+    if (styles.autoOpen === 'immediately') {
+      openTimeout = setTimeout(() => toggleChat(true), 1000)
+    } else if (styles.autoOpen === 'delayed') {
+      openTimeout = setTimeout(() => toggleChat(true), (styles.autoOpenDelay || 5) * 1000)
+    }
+    
+    // Cleanup on unmount or when settings change
+    return () => clearTimeout(openTimeout)
+  }, [styles.autoOpen, styles.autoOpenDelay, isOpen])
+
+  const toggleChat = (forceOpen = false) => {
+    if (isAnimating && !forceOpen) return
+    
+    setIsAnimating(true)
+    setIsOpen(forceOpen ? true : !isOpen)
+    
+    setTimeout(() => {
+      setIsAnimating(false)
+    }, 400)
   }
 
   // Convert CSS units to pixels for proper scaling
@@ -40,6 +70,34 @@ export function EmbedPreview({ styles, chatbotName = 'Preview Bot' }: EmbedPrevi
   const scale = Math.min(1, 400 / chatWidth) // Scale down if too wide
 
   return (
+    <>
+      {/* CSS Animation Keyframes */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes slideUp {
+            from {
+              transform: scale(${scale}) translateY(100%) scale(0.95);
+              opacity: 0;
+            }
+            to {
+              transform: scale(${scale}) translateY(0) scale(1);
+              opacity: 1;
+            }
+          }
+          
+          @keyframes slideDown {
+            from {
+              transform: scale(${scale}) translateY(0) scale(1);
+              opacity: 1;
+            }
+            to {
+              transform: scale(${scale}) translateY(100%) scale(0.95);
+              opacity: 0;
+            }
+          }
+        `
+      }} />
+    
     <div className="relative w-full bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg overflow-hidden border-2 border-dashed border-gray-300" style={{ height: '600px' }}>
       {/* Simulated website background */}
       <div className="absolute inset-0 p-8">
@@ -89,25 +147,29 @@ export function EmbedPreview({ styles, chatbotName = 'Preview Bot' }: EmbedPrevi
         style={{
           bottom: '32px',
           right: '32px',
-          width: '60px',
-          height: '60px',
-          borderRadius: '50%',
+          width: styles.toggleButtonSize,
+          height: styles.toggleButtonSize,
+          borderRadius: styles.toggleButtonBorderRadius,
           backgroundColor: isOpen 
-            ? styles.borderColor 
-            : styles.buttonBackgroundColor,
+            ? styles.toggleButtonCloseBackgroundColor 
+            : styles.toggleButtonBackgroundColor,
           color: isOpen 
-            ? styles.primaryColor 
-            : styles.buttonTextColor,
+            ? styles.toggleButtonCloseTextColor 
+            : styles.toggleButtonTextColor,
           fontFamily: styles.fontFamily,
         }}
         onMouseEnter={(e) => {
           if (!isOpen) {
-            e.currentTarget.style.backgroundColor = styles.buttonHoverColor
+            e.currentTarget.style.backgroundColor = styles.toggleButtonHoverColor
+          } else {
+            e.currentTarget.style.backgroundColor = styles.toggleButtonCloseHoverColor
           }
         }}
         onMouseLeave={(e) => {
           if (!isOpen) {
-            e.currentTarget.style.backgroundColor = styles.buttonBackgroundColor
+            e.currentTarget.style.backgroundColor = styles.toggleButtonBackgroundColor
+          } else {
+            e.currentTarget.style.backgroundColor = styles.toggleButtonCloseBackgroundColor
           }
         }}
       >
@@ -123,7 +185,7 @@ export function EmbedPreview({ styles, chatbotName = 'Preview Bot' }: EmbedPrevi
       {/* Chat Interface */}
       {isOpen && (
         <div
-          className="absolute shadow-xl transition-all duration-300"
+          className="absolute shadow-xl"
           style={{
             bottom: '32px',
             right: '32px',
@@ -137,8 +199,10 @@ export function EmbedPreview({ styles, chatbotName = 'Preview Bot' }: EmbedPrevi
             fontWeight: styles.fontWeight,
             color: styles.textColor,
             overflow: 'hidden',
-            transform: `scale(${scale})`,
+            transform: `scale(${scale}) translateY(0)`,
             transformOrigin: 'bottom right',
+            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+            animation: isOpen ? 'slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)' : 'slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
         >
           {/* Close Button */}
@@ -267,5 +331,6 @@ export function EmbedPreview({ styles, chatbotName = 'Preview Bot' }: EmbedPrevi
         </div>
       )}
     </div>
+    </>
   )
 } 
