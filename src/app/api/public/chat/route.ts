@@ -8,7 +8,6 @@ import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { HttpResponseOutputParser } from "langchain/output_parsers";
 import { RunnableSequence, RunnableLambda } from "@langchain/core/runnables";
 import { formatDocumentsAsString } from "langchain/util/document";
-// Use the anon client for public access
 import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
@@ -19,19 +18,23 @@ const formatMessage = (message: VercelChatMessage) => {
 
 export async function POST(req: Request) {
   try {
+    console.log("--- NEW PUBLIC CHAT REQUEST ---");
     const { messages, apiKey } = await req.json();
+    console.log("Request received with apiKey:", apiKey);
+    console.log("Messages:", messages);
 
     if (!apiKey) {
+      console.log("Bad request: apiKey is required.");
       return Response.json({ error: "apiKey is required" }, { status: 400 });
     }
 
-    // Create an anon client to interact with the database
+    // Create admin Supabase client for public API
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    // Fetch the chatbot configuration using the public API key
+    // Verify API key and get chatbot
     const { data: chatbot, error: chatbotError } = await supabase
       .from("chatbots")
       .select("id, prompt, model, temperature")
@@ -39,24 +42,30 @@ export async function POST(req: Request) {
       .single();
 
     if (chatbotError || !chatbot) {
+      console.log("Chatbot not found:", chatbotError?.message);
       return Response.json(
-        { error: "Chatbot not found or invalid API key" },
-        { status: 404 }
+        { error: "Invalid API key or chatbot not found" },
+        { status: 401 }
       );
     }
+    console.log("Chatbot config loaded:", chatbot);
 
     const instruction = chatbot.prompt.replace(/Context:.*$/gim, "").trim();
+    console.log("Sanitized instruction:", instruction);
+
     const formattedPreviousMessages = messages.slice(0, -1).map(formatMessage);
     const currentMessageContent = messages[messages.length - 1].content;
+    console.log("Current user question:", currentMessageContent);
+    console.log("Formatted history:", formattedPreviousMessages);
 
     const RAG_PROMPT_TEMPLATE = `${instruction}
-  ==============================
-  Context: {context}
-  ==============================
-  Current conversation: {chat_history}
-  
-  user: {question}
-  assistant:`;
+==============================
+Context: {context}
+==============================
+Current conversation: {chat_history}
+
+user: {question}
+assistant:`;
 
     const prompt = ChatPromptTemplate.fromTemplate(RAG_PROMPT_TEMPLATE);
 
@@ -74,17 +83,20 @@ export async function POST(req: Request) {
 
     const retriever = new RunnableLambda({
       func: async (question: string) => {
+        console.log("Retriever: Invoked with question:", question);
         const { data: documents, error } = await supabase.rpc(
           "match_documents",
           {
             query_embedding: await embeddings.embedQuery(question),
-            p_chatbot_id: chatbot.id, // Use the fetched chatbot ID
+            p_chatbot_id: chatbot.id,
             match_count: 5,
           }
         );
         if (error) {
+          console.error("Retriever: Error from match_documents RPC:", error);
           throw new Error(`Error fetching documents: ${error.message}`);
         }
+        console.log("Retriever: Found documents:", documents.length);
         return documents.map((doc: { content: string }) => ({
           pageContent: doc.content,
         }));
@@ -99,7 +111,9 @@ export async function POST(req: Request) {
         chat_history: (input) => input.chat_history,
         context: async (input) => {
           const relevantDocs = await retriever.invoke(input.question);
-          return formatDocumentsAsString(relevantDocs);
+          const formattedDocs = formatDocumentsAsString(relevantDocs);
+          console.log("Chain: Formatted context:", formattedDocs);
+          return formattedDocs;
         },
       },
       prompt,
@@ -111,12 +125,13 @@ export async function POST(req: Request) {
       question: currentMessageContent,
       chat_history: formattedPreviousMessages.join("\n"),
     });
+    console.log("Stream created. Returning response.");
 
     return new StreamingTextResponse(
       stream.pipeThrough(createStreamDataTransformer())
     );
   } catch (e: any) {
-    console.error("Public Chat API Error:", e);
+    console.error("--- PUBLIC CHAT API ERROR ---", e);
     return Response.json({ error: e.message }, { status: e.status ?? 500 });
   }
 }

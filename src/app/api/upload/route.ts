@@ -5,37 +5,72 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 
 export async function POST(req: Request) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  const supabase = createClient(supabaseUrl!, supabaseAnonKey!);
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return Response.json(
+        { error: "Missing Supabase configuration" },
+        { status: 500 }
+      );
+    }
 
-  const embeddings = new OpenAIEmbeddings({
-    openAIApiKey: process.env.OPENAI_API_KEY,
-  });
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-  const vectorStore = new SupabaseVectorStore(embeddings, {
-    client: supabase,
-    tableName: "documents",
-    queryName: "match_documents",
-  });
+    const embeddings = new OpenAIEmbeddings({
+      openAIApiKey: process.env.OPENAI_API_KEY,
+    });
 
-  const data = await req.formData();
-  const file: File | null = data.get("file") as unknown as File;
-  console.log(file);
+    const vectorStore = new SupabaseVectorStore(embeddings, {
+      client: supabase,
+      tableName: "documents",
+      queryName: "match_documents",
+    });
 
-  const loader = new PDFLoader(file);
+    const data = await req.formData();
+    const file: File | null = data.get("file") as unknown as File;
+    const chatbotId = data.get("chatbotId") as string;
 
-  const docs = await loader.load();
+    if (!file) {
+      return Response.json({ error: "No file provided" }, { status: 400 });
+    }
 
-  const splitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 1000,
-    chunkOverlap: 200,
-  });
+    if (!chatbotId) {
+      return Response.json({ error: "chatbotId is required" }, { status: 400 });
+    }
 
-  const chunkedDocs = await splitter.splitDocuments(docs);
+    console.log("Processing file:", file.name, "for chatbot:", chatbotId);
 
-  const result = await vectorStore.addDocuments(chunkedDocs);
+    const loader = new PDFLoader(file);
+    const docs = await loader.load();
 
-  return Response.json({ result });
+    const splitter = new RecursiveCharacterTextSplitter({
+      chunkSize: 1000,
+      chunkOverlap: 200,
+    });
+
+    const chunkedDocs = await splitter.splitDocuments(docs);
+
+    // Add chatbot metadata to each document chunk
+    const docsWithMetadata = chunkedDocs.map((doc) => ({
+      ...doc,
+      metadata: {
+        ...doc.metadata,
+        chatbot_id: chatbotId,
+        file_name: file.name,
+        upload_date: new Date().toISOString(),
+      },
+    }));
+
+    const result = await vectorStore.addDocuments(docsWithMetadata);
+
+    return Response.json({ result });
+  } catch (error) {
+    console.error("Upload error:", error);
+    return Response.json(
+      { error: error instanceof Error ? error.message : "Upload failed" },
+      { status: 500 }
+    );
+  }
 }
