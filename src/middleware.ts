@@ -1,31 +1,20 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
+import { updateSession } from "@/utils/supabase/middleware";
 
-export function middleware(request: NextRequest) {
-  // Handle preflight requests for CORS
-  if (request.method === "OPTIONS") {
-    return new NextResponse(null, {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      },
-    });
-  }
-
-  // Add CORS headers to the response for actual requests
-  const response = NextResponse.next();
-  response.headers.set("Access-Control-Allow-Origin", "*");
-  response.headers.set("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-  response.headers.set(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization"
-  );
-
-  return response;
+export async function middleware(request: NextRequest) {
+  // update user's auth session
+  return await updateSession(request);
 }
 
-// Apply this middleware only to your public API routes
 export const config = {
-  matcher: "/api/public/:path*",
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * Feel free to modify this pattern to include more paths.
+     */
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };
