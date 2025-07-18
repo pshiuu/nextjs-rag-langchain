@@ -3,8 +3,9 @@
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useChat } from 'ai/react'
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { X } from 'lucide-react'
+import { ChatbotStyle, defaultChatbotStyle } from '@/types/chatbot'
 
 interface EmbedChatPageProps {
   params: {
@@ -14,18 +15,46 @@ interface EmbedChatPageProps {
 
 export default function EmbedChatPage({ params }: EmbedChatPageProps) {
   const { apiKey } = params
+  const [styles, setStyles] = useState<ChatbotStyle>(defaultChatbotStyle)
+  const [stylesLoaded, setStylesLoaded] = useState(false)
 
   const { messages, input, handleInputChange, handleSubmit, isLoading } =
     useChat({
-      // Use the new public API endpoint
       api: '/api/public/chat',
-      // Pass the apiKey in the request body
       body: {
         apiKey,
       },
     })
 
   const chatParent = useRef<HTMLUListElement>(null)
+
+  // Fetch custom styles
+  useEffect(() => {
+    const fetchStyles = async () => {
+      try {
+        const response = await fetch('/api/public/styles', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ apiKey }),
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.styles) {
+            setStyles(data.styles)
+          }
+        }
+      } catch (error) {
+        console.log('Could not fetch custom styles:', error)
+      } finally {
+        setStylesLoaded(true)
+      }
+    }
+
+    fetchStyles()
+  }, [apiKey])
 
   useEffect(() => {
     const domNode = chatParent.current
@@ -50,22 +79,51 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
   }
 
   return (
-    <div className="flex flex-col w-full h-screen bg-background relative">
+    <div 
+      className="flex flex-col w-full relative"
+      style={{
+        height: styles.height,
+        backgroundColor: styles.backgroundColor,
+        fontFamily: styles.fontFamily,
+        fontSize: styles.fontSize,
+        fontWeight: styles.fontWeight,
+        color: styles.textColor,
+        maxWidth: styles.maxWidth,
+        margin: '0 auto',
+        borderRadius: styles.borderRadius,
+        overflow: 'hidden',
+        border: `1px solid ${styles.borderColor}`,
+      }}
+    >
       {/* Close Button */}
       <Button
         variant="ghost"
         size="icon"
         onClick={handleClose}
-        className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-background/80 hover:bg-background/90 border border-border/50"
+        className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full border"
+        style={{
+          backgroundColor: `${styles.backgroundColor}cc`, // cc = 80% opacity
+          borderColor: styles.borderColor,
+          color: styles.textColor,
+        }}
         aria-label="Close chat"
       >
         <X className="h-4 w-4" />
       </Button>
 
-      <section className="container px-4 py-4 flex flex-col flex-grow gap-4 mx-auto max-w-3xl pt-12">
+      <section 
+        className="px-4 py-4 flex flex-col flex-grow gap-4 mx-auto w-full pt-12"
+        style={{ padding: styles.padding }}
+      >
         <ul
           ref={chatParent}
-          className="h-1 p-4 flex-grow bg-muted/50 rounded-lg overflow-y-auto flex flex-col gap-4"
+          className="h-1 flex-grow overflow-y-auto flex flex-col"
+          style={{
+            gap: styles.messageSpacing,
+            padding: styles.padding,
+            backgroundColor: `${styles.backgroundColor}80`, // 50% opacity
+            borderRadius: styles.borderRadius,
+          }}
         >
           {messages.length > 0 ? (
             messages.map((m) => (
@@ -76,11 +134,17 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
                 }`}
               >
                 <div
-                  className={`rounded-xl p-4 shadow-md flex max-w-[80%] ${
-                    m.role === 'user'
-                      ? 'bg-background'
-                      : 'bg-primary text-primary-foreground'
-                  }`}
+                  className="shadow-md flex max-w-[80%]"
+                  style={{
+                    backgroundColor: m.role === 'user' 
+                      ? styles.userMessageColor 
+                      : styles.botMessageColor,
+                    color: m.role === 'user' 
+                      ? styles.textColor 
+                      : styles.backgroundColor,
+                    borderRadius: styles.borderRadius,
+                    padding: styles.messagePadding,
+                  }}
                 >
                   <p className="whitespace-pre-wrap">{m.content}</p>
                 </div>
@@ -88,7 +152,7 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
             ))
           ) : (
             <div className="flex justify-center items-center h-full">
-              <p className="text-muted-foreground">
+              <p style={{ color: `${styles.textColor}80` }}>
                 Ask a question to get started.
               </p>
             </div>
@@ -96,22 +160,56 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
         </ul>
       </section>
 
-      <section className="p-4 bg-background border-t">
+      <section 
+        className="border-t"
+        style={{
+          padding: styles.padding,
+          backgroundColor: styles.backgroundColor,
+          borderTopColor: styles.borderColor,
+        }}
+      >
         <form
           onSubmit={handleSubmit}
-          className="flex w-full max-w-3xl mx-auto items-center gap-2"
+          className="flex w-full items-center gap-2"
         >
-          <Input
-            className="flex-1 min-h-[40px]"
+          <input
+            className="flex-1 min-h-[40px] px-3 py-2 border rounded-md outline-none focus:ring-2 focus:ring-opacity-50"
             placeholder="Type your question..."
             type="text"
             value={input}
             onChange={handleInputChange}
             disabled={isLoading}
+            style={{
+              backgroundColor: styles.inputBackgroundColor,
+              borderColor: styles.inputBorderColor,
+              color: styles.inputTextColor,
+              borderRadius: styles.borderRadius,
+              fontFamily: styles.fontFamily,
+              fontSize: styles.fontSize,
+            }}
           />
-          <Button type="submit" disabled={isLoading || !input.trim()}>
+          <button
+            type="submit"
+            disabled={isLoading || !input.trim()}
+            className="px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: styles.buttonBackgroundColor,
+              color: styles.buttonTextColor,
+              borderRadius: styles.borderRadius,
+              fontFamily: styles.fontFamily,
+              fontSize: styles.fontSize,
+            }}
+            onMouseEnter={(e) => {
+              if (!isLoading && input.trim()) {
+                e.currentTarget.style.backgroundColor = styles.buttonHoverColor
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = styles.buttonBackgroundColor
+            }}
+          >
             {isLoading ? '...' : 'Send'}
-          </Button>
+          </button>
         </form>
       </section>
     </div>

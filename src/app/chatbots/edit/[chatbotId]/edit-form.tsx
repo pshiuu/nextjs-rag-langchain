@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { ChatbotStyling } from '@/components/chatbot-styling'
+import { ChatbotStyle, defaultChatbotStyle } from '@/types/chatbot'
 import {
   updateChatbotSettings,
   addKnowledge,
@@ -61,8 +63,50 @@ export function EditForm({
   const [message, setMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
+  // Styling state management
+  const [currentStyles, setCurrentStyles] = useState<ChatbotStyle>(() => {
+    try {
+      return chatbot.custom_styles ? JSON.parse(chatbot.custom_styles) : defaultChatbotStyle
+    } catch {
+      return defaultChatbotStyle
+    }
+  })
+  const [isSavingStyles, setIsSavingStyles] = useState(false)
+
   const addKnowledgeFormRef = useRef<HTMLFormElement>(null)
   const addUrlFormRef = useRef<HTMLFormElement>(null)
+
+  // Handle saving styles
+  const handleSaveStyles = async () => {
+    setIsSavingStyles(true)
+    try {
+      const response = await fetch(`/api/chatbots/${chatbot.id}/styles`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ styles: currentStyles }),
+      })
+
+      if (response.ok) {
+        setMessage('Styles saved successfully!')
+        setErrorMessage(null)
+      } else {
+        throw new Error('Failed to save styles')
+      }
+    } catch (error) {
+      setErrorMessage('Failed to save styles. Please try again.')
+      setMessage(null)
+    } finally {
+      setIsSavingStyles(false)
+      
+      // Clear messages after 5 seconds
+      setTimeout(() => {
+        setMessage(null)
+        setErrorMessage(null)
+      }, 5000)
+    }
+  }
 
   useEffect(() => {
     const states = [settingsState, knowledgeState, urlState]
@@ -191,6 +235,16 @@ export function EditForm({
               <SubmitButton>Save Settings</SubmitButton>
             </div>
           </form>
+        </section>
+
+        {/* -- Styling Section -- */}
+        <section className="bg-card p-6 rounded-lg shadow-sm">
+          <ChatbotStyling
+            initialStyles={currentStyles}
+            onStylesChange={setCurrentStyles}
+            onSave={handleSaveStyles}
+            isLoading={isSavingStyles}
+          />
         </section>
 
         {/* -- Knowledge Base Section -- */}

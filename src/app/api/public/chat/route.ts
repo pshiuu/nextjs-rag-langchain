@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     // Verify API key and get chatbot
     const { data: chatbot, error: chatbotError } = await supabase
       .from("chatbots")
-      .select("id, prompt, model, temperature")
+      .select("id, prompt, model, temperature, custom_styles")
       .eq("public_api_key", apiKey)
       .single();
 
