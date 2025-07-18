@@ -81,7 +81,7 @@ export default async function ChatbotsPage() {
           ) : (
             <div className="text-center py-12">
               <p className="text-lg text-muted-foreground mb-4">
-                You haven't created any chatbots yet.
+                You haven&apos;t created any chatbots yet.
               </p>
               <Button asChild>
                 <Link href="/chatbots/create?step=1">
