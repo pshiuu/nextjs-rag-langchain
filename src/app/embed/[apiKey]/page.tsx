@@ -70,6 +70,12 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
     }
   }, [messages])
 
+  // Add debugging for iframe content dimensions
+  useEffect(() => {
+    console.log('Embed page: Window dimensions:', window.innerWidth, 'x', window.innerHeight)
+    console.log('Embed page: Document dimensions:', document.documentElement.clientWidth, 'x', document.documentElement.clientHeight)
+  }, [])
+
   const handleClose = () => {
     // Try to close iframe by communicating with parent window
     try {
@@ -100,22 +106,38 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
   console.log('Rendering with styles:', styles)
 
   return (
-    <div 
-      className="flex flex-col w-full relative"
-      style={{
-        height: styles.height,
-        backgroundColor: styles.backgroundColor,
-        fontFamily: styles.fontFamily,
-        fontSize: styles.fontSize,
-        fontWeight: styles.fontWeight,
-        color: styles.textColor,
-        maxWidth: styles.maxWidth,
-        margin: '0 auto',
-        borderRadius: styles.borderRadius,
-        overflow: 'hidden',
-        border: `1px solid ${styles.borderColor}`,
-      }}
-    >
+    <>
+      {/* CSS Reset for iframe content */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            overflow: hidden !important;
+          }
+          * {
+            box-sizing: border-box;
+          }
+        `
+      }} />
+      
+      <div 
+        className="flex flex-col w-full h-screen relative"
+        style={{
+          backgroundColor: styles.backgroundColor,
+          fontFamily: styles.fontFamily,
+          fontSize: styles.fontSize,
+          fontWeight: styles.fontWeight,
+          color: styles.textColor,
+          overflow: 'hidden',
+          minHeight: '100vh',
+          maxHeight: '100vh',
+          margin: 0,
+          padding: 0,
+        }}
+      >
       {/* Close Button */}
       <Button
         variant="ghost"
@@ -133,17 +155,22 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
       </Button>
 
       <section 
-        className="px-4 py-4 flex flex-col flex-grow gap-4 mx-auto w-full pt-12"
-        style={{ padding: styles.padding }}
+        className="flex flex-col flex-grow w-full"
+        style={{ 
+          paddingTop: '48px', // Space for close button
+          paddingLeft: styles.padding,
+          paddingRight: styles.padding,
+        }}
       >
         <ul
           ref={chatParent}
-          className="h-1 flex-grow overflow-y-auto flex flex-col"
+          className="flex-grow overflow-y-auto flex flex-col"
           style={{
             gap: styles.messageSpacing,
             padding: styles.padding,
             backgroundColor: `${styles.backgroundColor}80`, // 50% opacity
             borderRadius: styles.borderRadius,
+            minHeight: '0', // Allow flexbox to work properly
           }}
         >
           {messages.length > 0 ? (
@@ -182,7 +209,7 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
       </section>
 
       <section 
-        className="border-t"
+        className="border-t flex-shrink-0"
         style={{
           padding: styles.padding,
           backgroundColor: styles.backgroundColor,
@@ -234,5 +261,6 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
         </form>
       </section>
     </div>
+    </>
   )
 }

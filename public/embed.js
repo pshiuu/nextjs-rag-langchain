@@ -8,14 +8,26 @@
     const chatbotId = chatbotContainer.dataset.chatbotId;
     const appOrigin = new URL(document.currentScript.src).origin;
     
-    // Default styles (fallback)
+    // Default styles (fallback) - matches the ChatbotStyle interface
     const defaultStyles = {
       primaryColor: '#0f172a',
       backgroundColor: '#ffffff',
+      userMessageColor: '#f8fafc',
+      botMessageColor: '#0f172a',
+      textColor: '#0f172a',
       borderColor: '#e2e8f0',
+      fontFamily: 'Inter, system-ui, sans-serif',
+      fontSize: '14px',
+      fontWeight: '400',
       borderRadius: '12px',
+      padding: '16px',
       maxWidth: '400px',
       height: '600px',
+      messageSpacing: '16px',
+      messagePadding: '16px',
+      inputBackgroundColor: '#ffffff',
+      inputBorderColor: '#e2e8f0',
+      inputTextColor: '#0f172a',
       buttonBackgroundColor: '#0f172a',
       buttonTextColor: '#ffffff',
       buttonHoverColor: '#334155'
@@ -62,13 +74,25 @@
     function applyStyles(styles) {
       currentStyles = { ...defaultStyles, ...styles };
       
-      // Apply iframe styles
+      console.log('Embed.js: Applying styles to iframe:', currentStyles);
+      
+      // Apply iframe styles (container controls dimensions and border)
       iframe.style.width = currentStyles.maxWidth || '400px';
       iframe.style.height = currentStyles.height || '600px';
       iframe.style.borderRadius = currentStyles.borderRadius || '12px';
       iframe.style.backgroundColor = currentStyles.backgroundColor || '#ffffff';
+      iframe.style.border = `1px solid ${currentStyles.borderColor || '#e2e8f0'}`;
       iframe.style.boxShadow = `0 10px 25px rgba(0, 0, 0, 0.15)`;
       iframe.style.overflow = 'hidden';
+      
+      // Ensure positioning is correct
+      iframe.style.position = 'fixed';
+      iframe.style.bottom = '90px';
+      iframe.style.right = '20px';
+      iframe.style.zIndex = '9999';
+      
+      console.log('Embed.js: Applied iframe dimensions:', iframe.style.width, 'x', iframe.style.height);
+      console.log('Embed.js: Applied iframe position:', 'bottom:', iframe.style.bottom, 'right:', iframe.style.right);
       
       // Apply button styles
       toggleButton.style.backgroundColor = currentStyles.buttonBackgroundColor || '#0f172a';
@@ -93,7 +117,13 @@
     // Function to toggle chat
     function toggleChat() {
       if (!isOpen) {
+        console.log('Embed.js: Opening chat, iframe dimensions:', iframe.style.width, 'x', iframe.style.height);
         iframe.style.display = 'block';
+        iframe.style.position = 'fixed';
+        iframe.style.bottom = '90px'; // Leave space for the button
+        iframe.style.right = '20px';
+        iframe.style.zIndex = '9999';
+        
         toggleButton.innerHTML = `
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -133,7 +163,13 @@
     // Toggle iframe visibility
     toggleButton.addEventListener('click', toggleChat);
     
-    // Fetch custom styles
+    // Apply initial default styles first
+    applyStyles(defaultStyles);
+    
+    // Fetch custom styles and override defaults
+    console.log('Embed.js: Fetching styles for chatbot ID:', chatbotId);
+    console.log('Embed.js: Styles API URL:', `${appOrigin}/api/public/styles`);
+    
     fetch(`${appOrigin}/api/public/styles`, {
       method: 'POST',
       headers: {
@@ -141,21 +177,31 @@
       },
       body: JSON.stringify({ apiKey: chatbotId }),
     })
-    .then(response => response.json())
+    .then(response => {
+      console.log('Embed.js: Styles fetch response status:', response.status);
+      console.log('Embed.js: Styles fetch response headers:', response.headers);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    })
     .then(data => {
-      if (data.styles) {
+      console.log('Embed.js: Received styles data:', data);
+      if (data && data.styles && typeof data.styles === 'object') {
+        console.log('Embed.js: Applying custom styles:', data.styles);
         applyStyles(data.styles);
+      } else if (data && data.error) {
+        console.error('Embed.js: Styles API returned error:', data.error);
+        console.log('Embed.js: Using default styles due to API error');
       } else {
-        applyStyles(defaultStyles);
+        console.log('Embed.js: No custom styles found (data.styles is null/undefined), keeping defaults');
+        console.log('Embed.js: Full response data:', data);
       }
     })
     .catch(error => {
-      console.log('Could not fetch custom styles, using defaults:', error);
-      applyStyles(defaultStyles);
+      console.error('Embed.js: Could not fetch custom styles:', error);
+      console.log('Embed.js: Using default styles due to fetch error');
     });
-    
-    // Apply initial default styles
-    applyStyles(defaultStyles);
     
     // Append to the body
     document.body.appendChild(iframe);
