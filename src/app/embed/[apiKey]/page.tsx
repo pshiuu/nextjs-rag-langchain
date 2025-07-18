@@ -396,7 +396,7 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
                   lineHeight: '1.4',
                 }}
               >
-                {styles.showInitialMessage ? styles.initialMessage : 'Ask a question to get started.'}
+                {styles.showInitialMessage ? styles.initialMessage : 'Frage mich etwas...'}
               </p>
             </div>
           )}
