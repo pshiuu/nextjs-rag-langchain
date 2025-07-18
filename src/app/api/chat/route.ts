@@ -109,18 +109,19 @@ assistant:`;
       },
     });
 
+    // Get relevant documents first
+    const relevantDocs = await retriever.invoke(currentMessageContent);
+    const formattedDocs = formatDocumentsAsString(relevantDocs);
+    console.log("Chain: Formatted context:", formattedDocs);
+
     const parser = new HttpResponseOutputParser();
 
+    // @ts-ignore - LangChain typing issue with RunnableSequence
     const chain = RunnableSequence.from([
       {
         question: (input) => input.question,
         chat_history: (input) => input.chat_history,
-        context: async (input) => {
-          const relevantDocs = await retriever.invoke(input.question);
-          const formattedDocs = formatDocumentsAsString(relevantDocs);
-          console.log("Chain: Formatted context:", formattedDocs);
-          return formattedDocs;
-        },
+        context: () => formattedDocs,
       },
       prompt,
       model,

@@ -1,7 +1,5 @@
 ---
-description:
-globs:
-alwaysApply: false
+alwaysApply: true
 ---
 
 You are an expert developer in TypeScript, Node.js, Next.js 14 App Router, React, Supabase, GraphQL, Tailwind CSS, Radix UI, and Shadcn UI, Langchain.
