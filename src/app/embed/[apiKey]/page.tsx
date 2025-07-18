@@ -32,6 +32,7 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
   useEffect(() => {
     const fetchStyles = async () => {
       try {
+        console.log('Fetching styles for apiKey:', apiKey)
         const response = await fetch('/api/public/styles', {
           method: 'POST',
           headers: {
@@ -42,9 +43,15 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
 
         if (response.ok) {
           const data = await response.json()
+          console.log('Received styles data:', data)
           if (data.styles) {
+            console.log('Applying custom styles:', data.styles)
             setStyles(data.styles)
+          } else {
+            console.log('No custom styles found, using defaults')
           }
+        } else {
+          console.log('Failed to fetch styles, status:', response.status)
         }
       } catch (error) {
         console.log('Could not fetch custom styles:', error)
@@ -77,6 +84,20 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
       console.log('Could not close chat window:', error)
     }
   }
+
+  // Show loading until styles are loaded to prevent flash of unstyled content
+  if (!stylesLoaded) {
+    return (
+      <div className="flex items-center justify-center w-full h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-600">Loading chat...</p>
+        </div>
+      </div>
+    )
+  }
+
+  console.log('Rendering with styles:', styles)
 
   return (
     <div 
