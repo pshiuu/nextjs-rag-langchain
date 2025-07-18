@@ -9,7 +9,8 @@ This system allows users to fully customize the appearance of their embedded cha
 - **Layout & Spacing**: Border radius, padding, dimensions, message spacing
 - **Input & Button Styling**: Custom colors for form elements
 - **Embed Customization**: Full control over chat button and iframe appearance
-- **Real-time Preview**: Changes are applied immediately in the embed
+- **Live Preview**: Real-time preview showing exactly how the embed will look on websites
+- **Interactive Preview**: Click the chat button to see both closed and opened states
 - **Message Handling**: Proper close communication between iframe and parent
 - **Responsive Design**: Adapts to different screen sizes and styles
 - **Default Templates**: Sensible defaults that work well out of the box
@@ -31,7 +32,12 @@ Before using this system, you need to run the migration in `docs/styling-migrati
 
 ### 2. Customizing Styles
 
-The styling interface is organized into sections:
+The styling interface features a side-by-side layout:
+
+- **Left Panel**: Style controls organized into sections
+- **Right Panel**: Live preview showing your embed in action
+
+Style controls are organized into sections:
 
 #### Colors
 
@@ -45,17 +51,19 @@ The styling interface is organized into sections:
 #### Typography
 
 - **Font Family**: Choose from system fonts or web fonts
-- **Font Size**: Text size (12px - 18px)
+- **Font Size**: Enter number and select unit (px, rem, em) - no need to type units!
 - **Font Weight**: Text weight (300 - 700)
 
 #### Layout & Spacing
 
-- **Border Radius**: Roundness of corners (e.g., "12px")
-- **Padding**: Internal spacing (e.g., "16px")
-- **Max Width**: Maximum width of chat container (e.g., "48rem")
-- **Height**: Height of chat interface (e.g., "600px")
-- **Message Spacing**: Space between messages
-- **Message Padding**: Internal padding for messages
+- **Border Radius**: Enter number and select unit (px, rem, em, %)
+- **Padding**: Enter number and select unit (px, rem, em)
+- **Max Width**: Enter number and select unit (px, rem, em, %, vw)
+- **Height**: Enter number and select unit (px, rem, em, vh)
+- **Message Spacing**: Enter number and select unit (px, rem, em)
+- **Message Padding**: Enter number and select unit (px, rem, em)
+
+**💡 Smart Unit Inputs**: Just type numbers! Select your preferred unit (px, rem, em, etc.) from the dropdown next to each field.
 
 #### Input & Button Colors
 
@@ -66,17 +74,29 @@ The styling interface is organized into sections:
 - **Button Text**: Text color for button
 - **Button Hover**: Background color when hovering
 
-### 3. Saving Styles
+### 3. Using the Live Preview
+
+1. The right panel shows a real-time preview of your embed
+2. Click the chat button in the preview to see the opened state
+3. Changes update instantly as you modify styles
+4. The preview simulates exactly how it will appear on websites
+5. **Proportional Sizing**: Large dimensions (like 48rem) are scaled down proportionally for preview
+6. **Scaling Indicator**: When scaled, you'll see the scaling percentage displayed
+7. **Real Dimensions**: The preview shows true relative sizing as it would appear on a 1200px viewport
+8. **Smart Unit Inputs**: No more typing "px" or "rem" - just enter numbers and select units from dropdowns
+
+### 4. Saving Styles
 
 1. Make your desired changes using the style editor
-2. Click "Save Styles" to apply changes
-3. Your embed will automatically use the new styles
+2. Watch the live preview update in real-time
+3. Click "Save Styles" to apply changes
+4. Your embed will automatically use the new styles
 
-### 4. Resetting to Defaults
+### 5. Resetting to Defaults
 
 Click "Reset to Defaults" to restore the original styling.
 
-### 5. Embed Integration
+### 6. Embed Integration
 
 The styling system automatically integrates with the embed script (`public/embed.js`):
 

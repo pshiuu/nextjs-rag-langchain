@@ -1,15 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ChatbotStyle, defaultChatbotStyle } from '@/types/chatbot'
+import { EmbedPreview } from './embed-preview'
 
 interface ChatbotStylingProps {
   initialStyles?: ChatbotStyle
   onStylesChange: (styles: ChatbotStyle) => void
   onSave: () => void
   isLoading?: boolean
+  chatbotName?: string
 }
 
 export function ChatbotStyling({
@@ -17,21 +19,21 @@ export function ChatbotStyling({
   onStylesChange,
   onSave,
   isLoading = false,
+  chatbotName = 'My Chatbot',
 }: ChatbotStylingProps) {
-  const [styles, setStyles] = useState<ChatbotStyle>(initialStyles)
+  // Use the parent's state directly instead of local state to prevent focus loss
+  const styles = initialStyles
 
-  const updateStyle = (key: keyof ChatbotStyle, value: string) => {
+  const updateStyle = useCallback((key: keyof ChatbotStyle, value: string) => {
     const newStyles = { ...styles, [key]: value }
-    setStyles(newStyles)
     onStylesChange(newStyles)
-  }
+  }, [styles, onStylesChange])
 
-  const resetToDefaults = () => {
-    setStyles(defaultChatbotStyle)
+  const resetToDefaults = useCallback(() => {
     onStylesChange(defaultChatbotStyle)
-  }
+  }, [onStylesChange])
 
-  const ColorInput = ({ 
+  const ColorInput = useCallback(({ 
     label, 
     value, 
     onChange 
@@ -58,9 +60,9 @@ export function ChatbotStyling({
         />
       </div>
     </div>
-  )
+  ), [])
 
-  const SelectInput = ({
+  const SelectInput = useCallback(({
     label,
     value,
     onChange,
@@ -85,9 +87,9 @@ export function ChatbotStyling({
         ))}
       </select>
     </div>
-  )
+  ), [])
 
-  const TextInput = ({
+  const TextInput = useCallback(({
     label,
     value,
     onChange,
@@ -107,7 +109,97 @@ export function ChatbotStyling({
         placeholder={placeholder}
       />
     </div>
-  )
+  ), [])
+
+  const UnitInput = useCallback(({
+    label,
+    value,
+    onChange,
+    placeholder,
+    units = ['px', 'rem', 'em', '%'],
+  }: {
+    label: string
+    value: string
+    onChange: (value: string) => void
+    placeholder?: string
+    units?: string[]
+  }) => {
+    // Extract number and unit from value
+    const extractNumberAndUnit = (val: string) => {
+      if (!val || val.trim() === '') {
+        return { number: '', unit: units[0] }
+      }
+      
+      // Match number (including decimals) and optional unit
+      const match = val.trim().match(/^(\d*\.?\d*)(.*)$/)
+      if (match) {
+        const num = match[1] || ''
+        let unit = match[2].trim()
+        
+        // If no unit provided, use default
+        if (!unit) {
+          unit = units[0]
+        }
+        
+        // Validate that unit is in our allowed units
+        if (!units.includes(unit)) {
+          unit = units[0]
+        }
+        
+        return { number: num, unit }
+      }
+      return { number: '', unit: units[0] }
+    }
+
+    const { number, unit } = extractNumberAndUnit(value)
+
+    const handleNumberChange = (newNumber: string) => {
+      // Only allow numbers, decimal points, and empty string
+      if (newNumber === '' || /^\d*\.?\d*$/.test(newNumber)) {
+        // Don't add unit if number is empty
+        if (newNumber === '') {
+          onChange('')
+        } else {
+          onChange(newNumber + unit)
+        }
+      }
+    }
+
+    const handleUnitChange = (newUnit: string) => {
+      // Don't add unit if there's no number
+      if (number === '') {
+        onChange('')
+      } else {
+        onChange(number + newUnit)
+      }
+    }
+
+    return (
+      <div className="space-y-2">
+        <label className="block text-sm font-medium">{label}</label>
+        <div className="flex gap-1">
+          <Input
+            type="text"
+            value={number}
+            onChange={(e) => handleNumberChange(e.target.value)}
+            placeholder={placeholder || "16"}
+            className="flex-1"
+          />
+          <select
+            value={unit}
+            onChange={(e) => handleUnitChange(e.target.value)}
+            className="px-3 py-2 border rounded-md bg-background h-[40px] min-w-[70px]"
+          >
+            {units.map((u) => (
+              <option key={u} value={u}>
+                {u}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    )
+  }, [])
 
   const fontFamilyOptions = [
     { value: 'Inter, system-ui, sans-serif', label: 'Inter (Default)' },
@@ -117,13 +209,6 @@ export function ChatbotStyling({
     { value: '"Times New Roman", serif', label: 'Times New Roman' },
     { value: 'Georgia, serif', label: 'Georgia' },
     { value: '"Courier New", monospace', label: 'Courier New' },
-  ]
-
-  const fontSizeOptions = [
-    { value: '12px', label: 'Small (12px)' },
-    { value: '14px', label: 'Medium (14px)' },
-    { value: '16px', label: 'Large (16px)' },
-    { value: '18px', label: 'Extra Large (18px)' },
   ]
 
   const fontWeightOptions = [
@@ -147,6 +232,11 @@ export function ChatbotStyling({
           </Button>
         </div>
       </div>
+
+      {/* Layout: Controls on left, Preview on right */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Style Controls */}
+        <div className="space-y-6 max-h-[800px] overflow-y-auto pr-4">{/* scrollable controls */}
 
       {/* Colors Section */}
       <div className="space-y-4">
@@ -195,11 +285,12 @@ export function ChatbotStyling({
             onChange={(value) => updateStyle('fontFamily', value)}
             options={fontFamilyOptions}
           />
-          <SelectInput
+          <UnitInput
             label="Font Size"
             value={styles.fontSize}
             onChange={(value) => updateStyle('fontSize', value)}
-            options={fontSizeOptions}
+            placeholder="14"
+            units={['px', 'rem', 'em']}
           />
           <SelectInput
             label="Font Weight"
@@ -214,41 +305,47 @@ export function ChatbotStyling({
       <div className="space-y-4">
         <h4 className="font-medium text-base border-b pb-2">Layout & Spacing</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <TextInput
+          <UnitInput
             label="Border Radius"
             value={styles.borderRadius}
             onChange={(value) => updateStyle('borderRadius', value)}
-            placeholder="12px"
+            placeholder="12"
+            units={['px', 'rem', 'em', '%']}
           />
-          <TextInput
+          <UnitInput
             label="Padding"
             value={styles.padding}
             onChange={(value) => updateStyle('padding', value)}
-            placeholder="16px"
+            placeholder="16"
+            units={['px', 'rem', 'em']}
           />
-          <TextInput
+          <UnitInput
             label="Max Width"
             value={styles.maxWidth}
             onChange={(value) => updateStyle('maxWidth', value)}
-            placeholder="48rem"
+            placeholder="48"
+            units={['px', 'rem', 'em', '%', 'vw']}
           />
-          <TextInput
+          <UnitInput
             label="Height"
             value={styles.height}
             onChange={(value) => updateStyle('height', value)}
-            placeholder="600px"
+            placeholder="600"
+            units={['px', 'rem', 'em', 'vh']}
           />
-          <TextInput
+          <UnitInput
             label="Message Spacing"
             value={styles.messageSpacing}
             onChange={(value) => updateStyle('messageSpacing', value)}
-            placeholder="16px"
+            placeholder="16"
+            units={['px', 'rem', 'em']}
           />
-          <TextInput
+          <UnitInput
             label="Message Padding"
             value={styles.messagePadding}
             onChange={(value) => updateStyle('messagePadding', value)}
-            placeholder="16px"
+            placeholder="16"
+            units={['px', 'rem', 'em']}
           />
         </div>
       </div>
@@ -287,6 +384,24 @@ export function ChatbotStyling({
             value={styles.buttonHoverColor}
             onChange={(value) => updateStyle('buttonHoverColor', value)}
           />
+        </div>
+      </div>
+      </div>
+
+        {/* Live Preview */}
+        <div className="space-y-4">
+          <h4 className="font-medium text-base border-b pb-2">Live Preview</h4>
+          <div className="sticky top-4">
+            <EmbedPreview styles={styles} chatbotName={chatbotName} />
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+              <p className="font-medium mb-1">💡 Preview Tips:</p>
+              <ul className="text-xs space-y-1">
+                <li>• Click the chat button to see the opened state</li>
+                <li>• Changes update instantly as you edit styles</li>
+                <li>• This shows exactly how it will appear on your website</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>

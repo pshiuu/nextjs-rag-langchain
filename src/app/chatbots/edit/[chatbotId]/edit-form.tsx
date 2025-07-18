@@ -1,7 +1,7 @@
 'use client'
 
 import { useFormState, useFormStatus } from 'react-dom'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -76,8 +76,13 @@ export function EditForm({
   const addKnowledgeFormRef = useRef<HTMLFormElement>(null)
   const addUrlFormRef = useRef<HTMLFormElement>(null)
 
+  // Stable callback for style changes to prevent input focus loss
+  const handleStylesChange = useCallback((newStyles: ChatbotStyle) => {
+    setCurrentStyles(newStyles)
+  }, [])
+
   // Handle saving styles
-  const handleSaveStyles = async () => {
+  const handleSaveStyles = useCallback(async () => {
     setIsSavingStyles(true)
     try {
       const response = await fetch(`/api/chatbots/${chatbot.id}/styles`, {
@@ -106,7 +111,7 @@ export function EditForm({
         setErrorMessage(null)
       }, 5000)
     }
-  }
+  }, [chatbot.id, currentStyles])
 
   useEffect(() => {
     const states = [settingsState, knowledgeState, urlState]
@@ -241,9 +246,10 @@ export function EditForm({
         <section className="bg-card p-6 rounded-lg shadow-sm">
           <ChatbotStyling
             initialStyles={currentStyles}
-            onStylesChange={setCurrentStyles}
+            onStylesChange={handleStylesChange}
             onSave={handleSaveStyles}
             isLoading={isSavingStyles}
+            chatbotName={chatbot.name}
           />
         </section>
 
