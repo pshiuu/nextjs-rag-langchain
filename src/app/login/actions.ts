@@ -27,26 +27,3 @@ export async function login(formData: FormData) {
   revalidatePath("/", "layout");
   redirect("/chatbots");
 }
-
-export async function signup(formData: FormData) {
-  console.log("Attempting to sign up...");
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
-
-  const data = {
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
-  };
-  console.log("Signup data:", data.email);
-
-  const { error } = await supabase.auth.signUp(data);
-
-  if (error) {
-    console.error("Signup error:", error.message);
-    redirect("/error");
-  }
-
-  console.log("Signup successful, redirecting to /chatbots");
-  revalidatePath("/", "layout");
-  redirect("/chatbots");
-}

@@ -1,4 +1,4 @@
-import { login, signup } from './actions'
+import { login } from './actions'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
@@ -44,9 +44,7 @@ export default function LoginPage() {
           <Button formAction={login} className="w-full">
             Sign In
           </Button>
-          <Button formAction={signup} className="w-full" variant="outline">
-            Sign Up
-          </Button>
+
         </div>
       </form>
     </div>
