@@ -110,7 +110,7 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
 
   return (
     <>
-      {/* CSS Reset for iframe content */}
+      {/* CSS Reset for iframe content with mobile-first responsive design */}
       <style dangerouslySetInnerHTML={{
         __html: `
           html, body {
@@ -119,9 +119,29 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
             width: 100% !important;
             height: 100% !important;
             overflow: hidden !important;
+            font-size: 14px;
           }
           * {
             box-sizing: border-box;
+          }
+          
+          /* Mobile-first responsive typography */
+          @media (max-width: 480px) {
+            html, body {
+              font-size: 12px;
+            }
+          }
+          
+          @media (min-width: 481px) and (max-width: 768px) {
+            html, body {
+              font-size: 13px;
+            }
+          }
+          
+          @media (min-width: 769px) {
+            html, body {
+              font-size: 14px;
+            }
           }
         `
       }} />
@@ -131,12 +151,13 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
         style={{
           backgroundColor: styles.backgroundColor,
           fontFamily: styles.fontFamily,
-          fontSize: styles.fontSize,
+          fontSize: `clamp(12px, ${styles.fontSize}, 18px)`, // Responsive font size
           fontWeight: styles.fontWeight,
           color: styles.textColor,
           overflow: 'hidden',
           minHeight: '100vh',
           maxHeight: '100vh',
+          minWidth: '280px', // Minimum width for mobile
           margin: 0,
           padding: 0,
         }}
@@ -144,23 +165,34 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
       {/* Header */}
       {styles.showHeader && (
         <div 
-          className="flex items-center justify-between px-4 py-3 border-b"
+          className="flex items-center justify-between border-b flex-shrink-0"
           style={{
+            padding: `clamp(8px, calc(${styles.padding} * 0.75), 16px)`,
             borderBottomColor: styles.borderColor,
             backgroundColor: styles.backgroundColor,
+            minHeight: '44px', // Minimum touch target size
           }}
         >
-          <div className="flex items-center gap-2">
-            <h3 className="font-medium text-sm" style={{ color: styles.textColor }}>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <h3 
+              className="font-medium truncate" 
+              style={{ 
+                color: styles.textColor,
+                fontSize: `clamp(13px, ${styles.fontSize}, 16px)`,
+              }}
+            >
               {styles.headerTitle}
             </h3>
             {styles.showOnlineStatus && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-shrink-0">
                 <div 
                   className="w-2 h-2 rounded-full animate-pulse"
-                  style={{ backgroundColor: '#10b981' }} // green-500
+                  style={{ backgroundColor: '#10b981' }}
                 />
-                <span className="text-xs" style={{ color: `${styles.textColor}80` }}>
+                <span 
+                  className="text-xs whitespace-nowrap" 
+                  style={{ color: `${styles.textColor}80` }}
+                >
                   Online
                 </span>
               </div>
@@ -170,15 +202,17 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
             variant="ghost"
             size="icon"
             onClick={handleClose}
-            className="h-6 w-6 rounded-full border"
+            className="h-8 w-8 rounded-full border flex-shrink-0 ml-2"
             style={{
               backgroundColor: `${styles.backgroundColor}cc`,
               borderColor: styles.borderColor,
               color: styles.textColor,
+              minWidth: '32px',
+              minHeight: '32px',
             }}
             aria-label="Close chat"
           >
-            <X className="h-3 w-3" />
+            <X className="h-4 w-4" />
           </Button>
         </div>
       )}
@@ -189,11 +223,17 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
           variant="ghost"
           size="icon"
           onClick={handleClose}
-          className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full border"
+          className="absolute z-10 rounded-full border"
           style={{
-            backgroundColor: `${styles.backgroundColor}cc`, // cc = 80% opacity
+            top: `clamp(8px, calc(${styles.padding} * 0.5), 12px)`,
+            right: `clamp(8px, calc(${styles.padding} * 0.5), 12px)`,
+            width: `clamp(32px, calc(${styles.padding} * 2), 40px)`,
+            height: `clamp(32px, calc(${styles.padding} * 2), 40px)`,
+            backgroundColor: `${styles.backgroundColor}cc`,
             borderColor: styles.borderColor,
             color: styles.textColor,
+            minWidth: '32px',
+            minHeight: '32px',
           }}
           aria-label="Close chat"
         >
@@ -202,22 +242,22 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
       )}
 
       <section 
-        className="flex flex-col flex-grow w-full"
+        className="flex flex-col flex-grow w-full min-h-0"
         style={{ 
-          paddingTop: styles.showHeader ? '0px' : '48px', // Space for close button when no header
-          paddingLeft: styles.padding,
-          paddingRight: styles.padding,
+          paddingTop: styles.showHeader ? '0px' : `clamp(40px, calc(${styles.padding} * 3), 56px)`,
+          paddingLeft: `clamp(8px, ${styles.padding}, 20px)`,
+          paddingRight: `clamp(8px, ${styles.padding}, 20px)`,
         }}
       >
         <ul
           ref={chatParent}
-          className="flex-grow overflow-y-auto flex flex-col"
+          className="flex-grow overflow-y-auto flex flex-col min-h-0"
           style={{
-            gap: styles.messageSpacing,
-            padding: styles.padding,
-            backgroundColor: `${styles.backgroundColor}80`, // 50% opacity
-            borderRadius: styles.borderRadius,
-            minHeight: '0', // Allow flexbox to work properly
+            gap: `clamp(8px, ${styles.messageSpacing}, 20px)`,
+            padding: `clamp(8px, ${styles.padding}, 16px)`,
+            backgroundColor: `${styles.backgroundColor}80`,
+            borderRadius: `clamp(8px, ${styles.borderRadius}, 20px)`,
+            scrollBehavior: 'smooth',
           }}
         >
           {messages.length > 0 ? (
@@ -229,7 +269,7 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
                 }`}
               >
                 <div
-                  className="shadow-md flex max-w-[80%]"
+                  className="shadow-md flex max-w-[85%] sm:max-w-[80%] lg:max-w-[75%]"
                   style={{
                     backgroundColor: m.role === 'user' 
                       ? styles.userMessageColor 
@@ -237,17 +277,27 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
                     color: m.role === 'user' 
                       ? styles.textColor 
                       : styles.backgroundColor,
-                    borderRadius: styles.borderRadius,
-                    padding: styles.messagePadding,
+                    borderRadius: `clamp(8px, ${styles.borderRadius}, 20px)`,
+                    padding: `clamp(8px, ${styles.messagePadding}, 16px)`,
+                    fontSize: `clamp(12px, ${styles.fontSize}, 16px)`,
+                    lineHeight: '1.4',
+                    wordBreak: 'break-word',
                   }}
                 >
-                  <p className="whitespace-pre-wrap">{m.content}</p>
+                  <p className="whitespace-pre-wrap m-0">{m.content}</p>
                 </div>
               </li>
             ))
           ) : (
-            <div className="flex justify-center items-center h-full">
-              <p style={{ color: `${styles.textColor}80` }}>
+            <div className="flex justify-center items-center h-full p-4">
+              <p 
+                className="text-center"
+                style={{ 
+                  color: `${styles.textColor}80`,
+                  fontSize: `clamp(12px, ${styles.fontSize}, 16px)`,
+                  lineHeight: '1.4',
+                }}
+              >
                 {styles.showInitialMessage ? styles.initialMessage : 'Ask a question to get started.'}
               </p>
             </div>
@@ -258,9 +308,10 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
       <section 
         className="border-t flex-shrink-0"
         style={{
-          padding: styles.padding,
+          padding: `clamp(8px, ${styles.padding}, 16px)`,
           backgroundColor: styles.backgroundColor,
           borderTopColor: styles.borderColor,
+          minHeight: '60px', // Minimum height for touch targets
         }}
       >
         <form
@@ -268,7 +319,7 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
           className="flex w-full items-center gap-2"
         >
           <input
-            className="flex-1 min-h-[40px] px-3 py-2 border rounded-md outline-none focus:ring-2 focus:ring-opacity-50"
+            className="flex-1 px-3 py-2 border rounded-md outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
             placeholder={styles.placeholderText}
             type="text"
             value={input}
@@ -278,21 +329,27 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
               backgroundColor: styles.inputBackgroundColor,
               borderColor: styles.inputBorderColor,
               color: styles.inputTextColor,
-              borderRadius: styles.borderRadius,
+              borderRadius: `clamp(6px, ${styles.borderRadius}, 12px)`,
               fontFamily: styles.fontFamily,
-              fontSize: styles.fontSize,
+              fontSize: `clamp(12px, ${styles.fontSize}, 16px)`,
+              minHeight: 'clamp(36px, calc(2.5rem), 44px)', // Touch-friendly height
+              lineHeight: '1.4',
             }}
           />
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
             style={{
               backgroundColor: styles.buttonBackgroundColor,
               color: styles.buttonTextColor,
-              borderRadius: styles.borderRadius,
+              borderRadius: `clamp(6px, ${styles.borderRadius}, 12px)`,
               fontFamily: styles.fontFamily,
-              fontSize: styles.fontSize,
+              fontSize: `clamp(12px, ${styles.fontSize}, 16px)`,
+              padding: `clamp(8px, calc(${styles.padding} * 0.75), 12px) clamp(12px, ${styles.padding}, 20px)`,
+              minHeight: 'clamp(36px, calc(2.5rem), 44px)', // Match input height
+              minWidth: 'clamp(60px, calc(4rem), 80px)', // Minimum touch target
+              whiteSpace: 'nowrap',
             }}
             onMouseEnter={(e) => {
               if (!isLoading && input.trim()) {

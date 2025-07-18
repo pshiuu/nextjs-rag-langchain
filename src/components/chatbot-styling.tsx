@@ -587,6 +587,13 @@ export function ChatbotStyling({
                 <li>• Click the chat button to see the opened state</li>
                 <li>• Changes update instantly as you edit styles</li>
                 <li>• This shows exactly how it will appear on your website</li>
+                {styles.autoOpen !== 'never' && (
+                  <li className="text-orange-600 font-medium">
+                    🚀 Auto-open is enabled: {styles.autoOpen === 'immediately' 
+                      ? 'Opens immediately' 
+                      : `Opens after ${styles.autoOpenDelay}s`}
+                  </li>
+                )}
               </ul>
             </div>
           </div>

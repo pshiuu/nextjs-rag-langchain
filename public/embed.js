@@ -93,30 +93,118 @@
       
       console.log('Embed.js: Applying styles to iframe:', currentStyles);
       
-      // Apply iframe styles (container controls dimensions and border)
-      iframe.style.width = currentStyles.maxWidth || '400px';
-      iframe.style.height = currentStyles.height || '600px';
-      iframe.style.borderRadius = currentStyles.borderRadius || '12px';
+      // Apply iframe styles with mobile-first responsive design
+      const maxWidth = currentStyles.maxWidth || '400px';
+      const height = currentStyles.height || '600px';
+      
+      // Parse values to numbers (handle px, rem, etc.)
+      const parseValue = (value) => {
+        if (typeof value === 'string') {
+          if (value.includes('rem')) {
+            return parseFloat(value) * 16; // Convert rem to px
+          } else if (value.includes('%')) {
+            return (parseFloat(value) / 100) * window.innerWidth;
+          }
+          return parseFloat(value) || 400;
+        }
+        return value || 400;
+      };
+      
+      const parsedMaxWidth = parseValue(maxWidth);
+      const parsedHeight = parseValue(height);
+      
+      // Mobile-first responsive calculations
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      // Calculate responsive button size early (needed for iframe positioning)
+      const buttonSize = currentStyles.toggleButtonSize || '60px';
+      const parsedButtonSize = parseValue(buttonSize);
+      
+      let responsiveButtonSize;
+      if (viewportWidth <= 480) {
+        responsiveButtonSize = Math.max(48, Math.min(parsedButtonSize, 56)); // 48-56px on mobile
+      } else if (viewportWidth <= 768) {
+        responsiveButtonSize = Math.max(52, Math.min(parsedButtonSize, 64)); // 52-64px on tablet
+      } else {
+        responsiveButtonSize = Math.max(56, Math.min(parsedButtonSize, 80)); // 56-80px on desktop
+      }
+      
+      // Calculate responsive dimensions
+      let finalWidth, finalHeight;
+      
+      if (viewportWidth <= 480) {
+        // Mobile: Position chat from bottom-right for visual continuity with button
+        finalWidth = Math.min(viewportWidth - 32, parsedMaxWidth); // 16px margins on each side
+        finalHeight = Math.min(viewportHeight - 100, parsedHeight);
+        
+        iframe.style.left = 'auto';
+        iframe.style.right = '16px';
+        iframe.style.width = `${finalWidth}px`;
+        iframe.style.maxWidth = 'calc(100vw - 32px)';
+        
+      } else if (viewportWidth <= 768) {
+        // Tablet: 95% width or maxWidth, whichever is smaller
+        finalWidth = Math.min(viewportWidth * 0.95, parsedMaxWidth);
+        finalHeight = Math.min(viewportHeight - 120, parsedHeight);
+        
+        iframe.style.left = 'auto';
+        iframe.style.right = '10px';
+        iframe.style.width = `${finalWidth}px`;
+        iframe.style.maxWidth = '95vw';
+        
+      } else {
+        // Desktop: Use configured width
+        finalWidth = parsedMaxWidth;
+        finalHeight = Math.min(viewportHeight - 120, parsedHeight);
+        
+        iframe.style.left = 'auto';
+        iframe.style.right = '20px';
+        iframe.style.width = `${finalWidth}px`;
+        iframe.style.maxWidth = 'calc(100vw - 40px)';
+      }
+      
+      // Set height with viewport considerations
+      iframe.style.height = `${finalHeight}px`;
+      iframe.style.maxHeight = 'calc(100vh - 100px)';
+      
+      // Apply other styles
+      iframe.style.borderRadius = `clamp(8px, ${currentStyles.borderRadius || '12px'}, 20px)`;
       iframe.style.backgroundColor = currentStyles.backgroundColor || '#ffffff';
       iframe.style.border = `1px solid ${currentStyles.borderColor || '#e2e8f0'}`;
-      iframe.style.boxShadow = `0 10px 25px rgba(0, 0, 0, 0.15)`;
+      iframe.style.boxShadow = `0 4px 20px rgba(0, 0, 0, 0.15)`;
       iframe.style.overflow = 'hidden';
       
-      // Ensure positioning is correct
+      // Positioning - ensure iframe appears above button
       iframe.style.position = 'fixed';
-      iframe.style.bottom = '90px';
-      iframe.style.right = '20px';
+      iframe.style.bottom = viewportWidth <= 480 ? `${responsiveButtonSize + 24}px` : `${responsiveButtonSize + 30}px`; // Leave space for button + margin
       iframe.style.zIndex = '9999';
+      
+      // Ensure minimum dimensions for usability
+      iframe.style.minWidth = '280px';
+      iframe.style.minHeight = '300px';
       
       console.log('Embed.js: Applied iframe dimensions:', iframe.style.width, 'x', iframe.style.height);
       console.log('Embed.js: Applied iframe position:', 'bottom:', iframe.style.bottom, 'right:', iframe.style.right);
       
-      // Apply toggle button styles
+      // Apply toggle button styles with responsive sizing (variables calculated earlier)
       toggleButton.style.backgroundColor = currentStyles.toggleButtonBackgroundColor || '#0f172a';
       toggleButton.style.color = currentStyles.toggleButtonTextColor || '#ffffff';
-      toggleButton.style.width = currentStyles.toggleButtonSize || '60px';
-      toggleButton.style.height = currentStyles.toggleButtonSize || '60px';
+      toggleButton.style.width = `${responsiveButtonSize}px`;
+      toggleButton.style.height = `${responsiveButtonSize}px`;
       toggleButton.style.borderRadius = currentStyles.toggleButtonBorderRadius || '50%';
+      
+      // Position button responsively - align with chat position
+      if (viewportWidth <= 480) {
+        // On mobile, keep button in bottom-right so chat opens from same location
+        toggleButton.style.bottom = '16px';
+        toggleButton.style.right = '16px';
+        toggleButton.style.left = 'auto';
+      } else {
+        toggleButton.style.bottom = '20px';
+        toggleButton.style.right = '20px';
+        toggleButton.style.left = 'auto';
+      }
       
       // Update toggle button hover effects
       toggleButton.onmouseenter = () => {
@@ -278,6 +366,13 @@
     
     // Apply initial default styles first
     applyStyles(defaultStyles);
+    
+    // Handle window resize for responsiveness
+    window.addEventListener('resize', () => {
+      if (currentStyles) {
+        applyStyles(currentStyles);
+      }
+    });
     
     // Append to the body
     document.body.appendChild(iframe);
