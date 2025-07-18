@@ -14,6 +14,16 @@ import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+// Handle CORS preflight requests
+export async function OPTIONS(req: NextRequest) {
+  const headers = {
+    "Access-Control-Allow-Origin": "*", // Allow any origin
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
+  return new Response(null, { status: 204, headers });
+}
+
 const formatMessage = (message: VercelChatMessage) => {
   return `${message.role}: ${message.content}`;
 };
@@ -200,7 +210,8 @@ assistant:`;
       stream.pipeThrough(createStreamDataTransformer())
     );
 
-    // Add security headers to streaming response
+    // Add security and CORS headers to streaming response
+    response.headers.set("Access-Control-Allow-Origin", "*");
     if (securityResult.headers) {
       Object.entries(securityResult.headers).forEach(([key, value]) => {
         response.headers.set(key, value);
@@ -210,9 +221,11 @@ assistant:`;
     return response;
   } catch (e: any) {
     console.error("--- PUBLIC CHAT API ERROR ---", e);
-    return ChatSecurity.createErrorResponse(
+    const errorResponse = ChatSecurity.createErrorResponse(
       "Internal server error",
       e.status ?? 500
     );
+    errorResponse.headers.set("Access-Control-Allow-Origin", "*");
+    return errorResponse;
   }
 }

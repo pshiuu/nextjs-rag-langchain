@@ -4,6 +4,16 @@ import { NextRequest } from "next/server";
 
 export const runtime = "edge";
 
+// Handle CORS preflight requests
+export async function OPTIONS(req: NextRequest) {
+  const headers = {
+    "Access-Control-Allow-Origin": "*", // Allow any origin
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
+  return new Response(null, { status: 204, headers });
+}
+
 export async function POST(req: NextRequest) {
   try {
     console.log("Public styles API: Request received");
@@ -133,7 +143,8 @@ export async function POST(req: NextRequest) {
 
     const response = Response.json({ styles });
 
-    // Add security headers
+    // Add security and CORS headers
+    response.headers.set("Access-Control-Allow-Origin", "*");
     if (securityResult.headers) {
       Object.entries(securityResult.headers).forEach(([key, value]) => {
         response.headers.set(key, value);
@@ -143,6 +154,11 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (e: any) {
     console.error("Error in public styles API:", e);
-    return ChatSecurity.createErrorResponse("Internal server error", 500);
+    const errorResponse = ChatSecurity.createErrorResponse(
+      "Internal server error",
+      500
+    );
+    errorResponse.headers.set("Access-Control-Allow-Origin", "*");
+    return errorResponse;
   }
 }
