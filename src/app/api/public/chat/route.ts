@@ -85,7 +85,7 @@ assistant:`;
       func: async (question: string) => {
         console.log("Retriever: Invoked with question:", question);
         const { data: documents, error } = await supabase.rpc(
-          "match_documents",
+          "match_documents_public",
           {
             query_embedding: await embeddings.embedQuery(question),
             p_chatbot_id: chatbot.id,

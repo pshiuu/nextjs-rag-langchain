@@ -95,7 +95,7 @@ assistant:`;
           {
             query_embedding: await embeddings.embedQuery(question),
             p_chatbot_id: chatbotId,
-            match_count: 20,
+            match_count: 5,
           }
         );
         if (error) {
