@@ -1,16 +1,59 @@
 import { createClient } from "@supabase/supabase-js";
+import { ChatSecurity } from "@/utils/security";
+import { NextRequest } from "next/server";
 
 export const runtime = "edge";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     console.log("Public styles API: Request received");
-    const { apiKey } = await req.json();
+
+    // Basic rate limiting for styles API (less strict than chat)
+    const ip = ChatSecurity.getClientIP(req);
+    const sessionId = ChatSecurity.generateSessionId(req);
+
+    // Simple validation for styles API (no message content to validate)
+    const securityResult = await ChatSecurity.validateRequest({
+      ip,
+      sessionId,
+      apiKey: "styles-request", // Placeholder for styles requests
+      message: "styles-request", // Placeholder message
+      userAgent: req.headers.get("user-agent") || "unknown",
+    });
+
+    // For styles API, we'll be more lenient but still apply some rate limiting
+    if (
+      !securityResult.allowed &&
+      securityResult.reason?.includes("Rate limit")
+    ) {
+      console.log(
+        `Styles API rate limited for IP ${ip}: ${securityResult.reason}`
+      );
+      return ChatSecurity.createErrorResponse(
+        securityResult.reason || "Rate limit exceeded",
+        429
+      );
+    }
+
+    // Parse request with size limit
+    let requestBody;
+    try {
+      const text = await req.text();
+      if (text.length > 1000) {
+        // 1KB limit for styles requests
+        return ChatSecurity.createErrorResponse("Request too large", 413);
+      }
+      requestBody = JSON.parse(text);
+    } catch (error) {
+      return ChatSecurity.createErrorResponse("Invalid JSON", 400);
+    }
+
+    const { apiKey } = requestBody;
     console.log("Public styles API: apiKey =", apiKey);
 
-    if (!apiKey) {
-      console.log("Public styles API: No apiKey provided");
-      return Response.json({ error: "apiKey is required" }, { status: 400 });
+    if (!apiKey || typeof apiKey !== "string" || apiKey.length > 100) {
+      console.log("Public styles API: Invalid apiKey provided");
+      return ChatSecurity.createErrorResponse("Valid apiKey is required", 400);
     }
 
     // Create admin Supabase client for public API
@@ -41,12 +84,9 @@ export async function POST(req: Request) {
         "Public styles API: Chatbot not found or error:",
         chatbotError
       );
-      return Response.json(
-        {
-          error: "Invalid API key or chatbot not found",
-          details: chatbotError?.message,
-        },
-        { status: 401 }
+      return ChatSecurity.createErrorResponse(
+        "Invalid API key or chatbot not found",
+        401
       );
     }
 
@@ -84,9 +124,19 @@ export async function POST(req: Request) {
     }
 
     console.log("Public styles API: Returning styles:", styles);
-    return Response.json({ styles });
+
+    const response = Response.json({ styles });
+
+    // Add security headers
+    if (securityResult.headers) {
+      Object.entries(securityResult.headers).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+    }
+
+    return response;
   } catch (e: any) {
     console.error("Error in public styles API:", e);
-    return Response.json({ error: e.message }, { status: e.status ?? 500 });
+    return ChatSecurity.createErrorResponse("Internal server error", 500);
   }
 }

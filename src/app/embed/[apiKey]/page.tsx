@@ -7,6 +7,20 @@ import { useRef, useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { ChatbotStyle, defaultChatbotStyle } from '@/types/chatbot'
 
+// Client-side security configuration
+const CLIENT_SECURITY = {
+  maxMessageLength: 2000,
+  minMessageInterval: 1000, // 1 second minimum between messages
+  maxMessagesPerMinute: 20,
+  bannedPatterns: [
+    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+    /javascript:/gi,
+    /data:/gi,
+    /vbscript:/gi,
+    /on\w+=/gi, // onclick, onload, etc.
+  ]
+}
+
 interface EmbedChatPageProps {
   params: {
     apiKey: string
@@ -17,8 +31,55 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
   const { apiKey } = params
   const [styles, setStyles] = useState<ChatbotStyle>(defaultChatbotStyle)
   const [stylesLoaded, setStylesLoaded] = useState(false)
+  const [lastMessageTime, setLastMessageTime] = useState(0)
+  const [messageCount, setMessageCount] = useState(0)
+  const [minuteStartTime, setMinuteStartTime] = useState(Date.now())
+  const [inputError, setInputError] = useState('')
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading } =
+  // Client-side input validation
+  const validateInput = (message: string): string | null => {
+    if (!message || message.trim().length === 0) {
+      return 'Message cannot be empty'
+    }
+    
+    if (message.length > CLIENT_SECURITY.maxMessageLength) {
+      return `Message too long. Maximum ${CLIENT_SECURITY.maxMessageLength} characters.`
+    }
+    
+    // Check for malicious patterns
+    for (const pattern of CLIENT_SECURITY.bannedPatterns) {
+      if (pattern.test(message)) {
+        return 'Message contains invalid content'
+      }
+    }
+    
+    return null
+  }
+
+  // Rate limiting check
+  const checkRateLimit = (): string | null => {
+    const now = Date.now()
+    
+    // Check minimum interval between messages
+    if (now - lastMessageTime < CLIENT_SECURITY.minMessageInterval) {
+      return 'Please wait before sending another message'
+    }
+    
+    // Reset counter if a minute has passed
+    if (now - minuteStartTime > 60000) {
+      setMessageCount(0)
+      setMinuteStartTime(now)
+    }
+    
+    // Check messages per minute limit
+    if (messageCount >= CLIENT_SECURITY.maxMessagesPerMinute) {
+      return 'Too many messages. Please wait a moment.'
+    }
+    
+    return null
+  }
+
+  const { messages, input, handleInputChange, handleSubmit: originalHandleSubmit, isLoading } =
     useChat({
       api: '/api/public/chat',
       body: {
@@ -27,7 +88,44 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
       initialMessages: styles.showInitialMessage 
         ? [{ id: 'initial', role: 'assistant', content: styles.initialMessage }]
         : undefined,
+      onError: (error) => {
+        console.error('Chat error:', error)
+        setInputError('Failed to send message. Please try again.')
+      }
     })
+
+  // Enhanced submit handler with validation
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setInputError('')
+    
+    // Client-side validation
+    const validationError = validateInput(input)
+    if (validationError) {
+      setInputError(validationError)
+      return
+    }
+    
+    // Rate limiting check
+    const rateLimitError = checkRateLimit()
+    if (rateLimitError) {
+      setInputError(rateLimitError)
+      return
+    }
+    
+    // Update rate limiting counters
+    setLastMessageTime(Date.now())
+    setMessageCount(prev => prev + 1)
+    
+    // Sanitize input before sending
+    const sanitizedInput = input
+      .trim()
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .substring(0, CLIENT_SECURITY.maxMessageLength)
+    
+    // Call original submit with sanitized input
+    originalHandleSubmit(e)
+  }
 
   const chatParent = useRef<HTMLUListElement>(null)
 
@@ -316,26 +414,43 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
       >
         <form
           onSubmit={handleSubmit}
-          className="flex w-full items-center gap-2"
+          className="flex flex-col w-full gap-2"
         >
-          <input
-            className="flex-1 px-3 py-2 border rounded-md outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
-            placeholder={styles.placeholderText}
-            type="text"
-            value={input}
-            onChange={handleInputChange}
-            disabled={isLoading}
-            style={{
-              backgroundColor: styles.inputBackgroundColor,
-              borderColor: styles.inputBorderColor,
-              color: styles.inputTextColor,
-              borderRadius: `clamp(6px, ${styles.borderRadius}, 12px)`,
-              fontFamily: styles.fontFamily,
-              fontSize: `clamp(12px, ${styles.fontSize}, 16px)`,
-              minHeight: 'clamp(36px, calc(2.5rem), 44px)', // Touch-friendly height
-              lineHeight: '1.4',
-            }}
-          />
+          {inputError && (
+            <div 
+              className="text-xs px-2 py-1 rounded"
+              style={{
+                backgroundColor: '#fef2f2',
+                color: '#dc2626',
+                border: '1px solid #fecaca'
+              }}
+            >
+              {inputError}
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <input
+              className="flex-1 px-3 py-2 border rounded-md outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
+              placeholder={styles.placeholderText}
+              type="text"
+              value={input}
+              onChange={(e) => {
+                handleInputChange(e)
+                if (inputError) setInputError('') // Clear error on new input
+              }}
+              disabled={isLoading}
+              maxLength={CLIENT_SECURITY.maxMessageLength}
+              style={{
+                backgroundColor: styles.inputBackgroundColor,
+                borderColor: inputError ? '#dc2626' : styles.inputBorderColor,
+                color: styles.inputTextColor,
+                borderRadius: `clamp(6px, ${styles.borderRadius}, 12px)`,
+                fontFamily: styles.fontFamily,
+                fontSize: `clamp(12px, ${styles.fontSize}, 16px)`,
+                minHeight: 'clamp(36px, calc(2.5rem), 44px)', // Touch-friendly height
+                lineHeight: '1.4',
+              }}
+            />
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
@@ -362,6 +477,7 @@ export default function EmbedChatPage({ params }: EmbedChatPageProps) {
           >
             {isLoading ? '...' : styles.sendButtonText}
           </button>
+          </div>
         </form>
       </section>
     </div>
